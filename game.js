@@ -7,10 +7,10 @@ const W = 420, H = 700, GROUND_Y = 610;
 const GRAV = 1650, FLAP = -500, MAX_FALL = 720;
 const BIRD_X = 110, PIPE_W = 74, SPACING = 235;
 const STAGE_AT = 20;                 // cứ 20 điểm tiến hóa 1 lần
-const PEAR_EVO = 4;                  // mỗi quả lê = +4 điểm tiến hóa
+const PEAR_EVO = 5;                  // mỗi quả lê = +5 điểm tiến hóa
 const MAX_STAGE = 4;                 // 5 hình thái (0..4)
-const SCALES = [1.75, 1.9, 2.05, 2.2, 2.35];   // hình thái càng cao càng to
-const RADII  = [12, 12.5, 13, 13.5, 14];       // vùng va chạm tăng nhẹ
+const SCALES = [1.8, 2.05, 2.3, 2.55, 2.85];   // hình thái càng cao càng to
+const RADII  = [12, 13, 14, 15, 16];           // vùng va chạm tăng nhẹ
 const $ = id => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -92,7 +92,7 @@ const PEAR = buildCanvas([
 
 /* ============ Trạng thái game ============ */
 const g = { state: "menu", bird: null, pipes: [], pears: [], parts: [], score: 0, scroll: 0, wingT: 0, shake: 0, flash: 0, deadT: 0, hitGround: false,
-            evo: 0, stage: 0, pearCount: 0, inv: 0, trailT: 0 };
+            evo: 0, stage: 0, pearCount: 0, inv: 0, trailT: 0, morph: 0, slow: 0 };
 let t = 0;
 const birdR = () => RADII[g.stage];
 const meta = () => SPR[charId];
@@ -100,7 +100,7 @@ const meta = () => SPR[charId];
 function reset() {
   g.bird = { y: 320, vy: 0 };
   g.pipes = []; g.pears = []; g.parts = []; g.score = 0; g.scroll = 0; g.wingT = 0; g.shake = 0; g.flash = 0; g.deadT = 0; g.hitGround = false;
-  g.evo = 0; g.stage = 0; g.pearCount = 0; g.inv = 0; g.trailT = 0;
+  g.evo = 0; g.stage = 0; g.pearCount = 0; g.inv = 0; g.trailT = 0; g.morph = 0; g.slow = 0;
   $("score").textContent = "0"; $("msg").textContent = "";
   updateEvoHud();
 }
@@ -115,20 +115,20 @@ function spawnPipe() {
   if (prev) gapY = clamp(gapY, prev.gapY - 170, prev.gapY + 170);   // luôn vượt được
   gapY = clamp(gapY, lo, hi);
   g.pipes.push({ x: prev ? prev.x + SPACING : W + 60, gapY, gapH, passed: false });
-  if (prev && Math.random() < 0.5) {                    // quả lê lơ lửng giữa hai cột
+  if (prev && Math.random() < 0.8) {                    // quả lê lơ lửng giữa hai cột
     const y = clamp((prev.gapY + gapY) / 2 + rand(-70, 70), 95, GROUND_Y - 95);
     g.pears.push({ x: prev.x + SPACING / 2 + PIPE_W / 2, y, ph: rand(0, 6) });
   }
 }
 
-function say(txt) { const m = $("msg"); m.textContent = txt; m.classList.remove("pop"); void m.offsetWidth; m.classList.add("pop"); }
+function say(txt, big) { const m = $("msg"); m.textContent = txt; m.classList.toggle("big", !!big); m.classList.remove("pop"); void m.offsetWidth; m.classList.add("pop"); }
 
 /* ============ Tiến hóa ============ */
 function updateEvoHud() {
   const m = meta();
-  $("evoName").textContent = `${m.icon} ${m.names[g.stage]}${g.stage >= MAX_STAGE ? " · MAX" : ""}`;
+  $("evoName").textContent = `${m.icon} ${m.names[g.stage]} · Cấp ${g.stage + 1}/${MAX_STAGE + 1}`;
   $("evoFill").style.width = (g.stage >= MAX_STAGE ? 100 : ((g.evo - g.stage * STAGE_AT) / STAGE_AT) * 100) + "%";
-  $("evoPears").textContent = `🍐 ${g.pearCount}`;
+  $("evoPears").textContent = `🍐 ${g.pearCount}  ·  ` + (g.stage >= MAX_STAGE ? "TỐI ĐA" : `${g.evo - g.stage * STAGE_AT}/${STAGE_AT} tiến hóa`);
 }
 function burst(x, y, n, cols, sp = 220) {
   for (let i = 0; i < n; i++) {
@@ -140,9 +140,9 @@ function addEvo(n) {
   g.evo += n;
   const ns = Math.min(MAX_STAGE, Math.floor(g.evo / STAGE_AT));
   if (ns > g.stage) {
-    g.stage = ns; g.flash = 1; g.shake = 6; g.inv = 1.4;
-    burst(BIRD_X, g.bird.y, 56, [accent(charId, ns), accent2(charId, ns), "#ffffff"], 320);
-    say(`${meta().icon} TIẾN HÓA: ${meta().names[ns]}!`);
+    g.stage = ns; g.flash = 1; g.shake = 8; g.inv = 1.6; g.morph = 1.0; g.slow = 0.55;
+    burst(BIRD_X, g.bird.y, 90, [accent(charId, ns), accent2(charId, ns), "#ffffff"], 380);
+    say(`${meta().icon} TIẾN HÓA!  ${meta().names[ns]}`, true);
     [523, 659, 784, 1046].forEach((f, i) => beep(f, 0.22, "triangle", 0.14, 0, i * 0.09));
     if (ns > store.get("maxStage:" + charId, 0)) store.set("maxStage:" + charId, ns);
   }
@@ -190,7 +190,9 @@ function die(ground) {
 }
 
 function update(dt) {
+  if (g.slow > 0) { g.slow = Math.max(0, g.slow - dt); dt *= 0.35; }   // chậm lại khi tiến hóa
   t += dt;
+  g.morph = Math.max(0, g.morph - dt);
   const target = THEMES[themeOf(g.score)];
   for (let i = 0; i < th.length; i++) th[i] += (target[i] - th[i]) * Math.min(1, dt * 2);
   g.shake = Math.max(0, g.shake - dt * 30);
@@ -293,19 +295,51 @@ function drawPear(q) {
   ctx.restore();
 }
 
+const whiteCache = new Map();
+function whiteOf(c) {
+  if (!whiteCache.has(c)) {
+    const w = document.createElement("canvas"); w.width = c.width; w.height = c.height;
+    const x = w.getContext("2d"); x.drawImage(c, 0, 0);
+    x.globalCompositeOperation = "source-in"; x.fillStyle = "#fff"; x.fillRect(0, 0, w.width, w.height);
+    whiteCache.set(c, w);
+  }
+  return whiteCache.get(c);
+}
 function drawBird() {
   const b = g.bird, st = g.stage;
   let frame = 1;
   if (g.wingT > 0) { const p = 1 - g.wingT / 0.3; frame = p < 0.34 ? 0 : p < 0.67 ? 1 : 2; }
   if (g.state === "dying") frame = 2;
   const ang = g.state === "ready" ? 0 : clamp(b.vy / 650, -0.45, 1.25);
-  const sc = SCALES[st];
+  const mp = g.morph;                                   // 1 → 0 trong lúc tiến hóa
+  const sc = SCALES[st] * (1 + 0.5 * Math.sin(Math.min(1, mp) * Math.PI));   // "phình" lên rồi co lại
+  const col = accent(charId, st);
   ctx.save();
-  ctx.translate(BIRD_X, b.y); ctx.rotate(ang);
+  ctx.translate(BIRD_X, b.y);
+
+  // vòng sóng xung kích khi tiến hóa
+  if (mp > 0) {
+    ctx.save(); ctx.globalAlpha = mp * 0.9; ctx.strokeStyle = col; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(0, 0, (1 - mp) * 260 + 20, 0, 7); ctx.stroke();
+    ctx.globalAlpha = mp * 0.6; ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, (1 - mp) * 180 + 10, 0, 7); ctx.stroke(); ctx.restore();
+  }
+  // hào quang quanh nhân vật từ cấp 2
+  if (st >= 1) {
+    const R = 26 + st * 9 + Math.sin(t * 6) * 2, gr = ctx.createRadialGradient(0, 0, 4, 0, 0, R);
+    gr.addColorStop(0, col + "66"); gr.addColorStop(1, col + "00");
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
+  }
+  ctx.rotate(ang);
   ctx.imageSmoothingEnabled = false;
-  if (g.inv > 0) ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 34);
-  if (st >= 3) { ctx.shadowColor = accent(charId, st); ctx.shadowBlur = st === 4 ? 24 : 14; }
-  ctx.drawImage(FORMS[charId][st][frame], -13.5 * sc, -12.5 * sc, 28 * sc, 24 * sc);
+  if (g.inv > 0 && mp <= 0) ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 34);
+  ctx.shadowColor = col; ctx.shadowBlur = [0, 8, 12, 18, 26][st];
+  const img = FORMS[charId][st][frame];
+  ctx.drawImage(img, -13.5 * sc, -12.5 * sc, 28 * sc, 24 * sc);
+  if (mp > 0.35) {                                      // lóe trắng trong khoảnh khắc biến hình
+    ctx.shadowBlur = 0; ctx.globalAlpha = clamp((mp - 0.35) / 0.65, 0, 1);
+    ctx.drawImage(whiteOf(img), -13.5 * sc, -12.5 * sc, 28 * sc, 24 * sc);
+  }
   ctx.restore();
 }
 
@@ -409,10 +443,11 @@ $("btnHome").onclick = goHome;
 $("btnSound").onclick = () => { soundOn = !soundOn; store.set("sound", soundOn); refreshLabels(); beep(600); };
 
 /* --- Chọn nhân vật --- */
+let previewAll = false;                 // bật để xem thử mọi hình thái (không ảnh hưởng tiến trình)
 function buildPick() {
   const list = $("pickList"); list.innerHTML = "";
   for (const cid of Object.keys(SPR)) {
-    const m = SPR[cid], maxSt = store.get("maxStage:" + cid, 0);
+    const m = SPR[cid], maxSt = previewAll ? MAX_STAGE : store.get("maxStage:" + cid, 0);
     const card = document.createElement("div"); card.className = "pcard" + (cid === charId ? " on" : "");
     const title = document.createElement("div"); title.className = "pt"; title.textContent = `${m.icon} ${m.label}` + (cid === charId ? "  ✓" : "");
     const big = document.createElement("canvas"); big.width = 28; big.height = 24; big.className = "pbig";
@@ -432,6 +467,7 @@ function buildPick() {
   }
 }
 $("btnPick").onclick = () => { buildPick(); hide("menu"); show("pick"); };
+$("pickPreview").onclick = () => { previewAll = !previewAll; $("pickPreview").textContent = previewAll ? "👁 Đang xem thử tất cả (bấm để tắt)" : "👁 Xem thử mọi hình thái"; buildPick(); };
 $("pickBack").onclick = () => { hide("pick"); show("menu"); refreshLabels(); };
 
 /* --- Bảng xếp hạng --- */
