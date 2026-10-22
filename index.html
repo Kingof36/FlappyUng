@@ -75,6 +75,24 @@
   .lg-ico{font-weight:900;font-size:18px;width:22px;text-align:center}
   .lg-link{background:none!important;border:none!important;min-width:0;font-size:14px!important;text-decoration:underline;opacity:.9;padding:4px!important}
   #loginErr{color:#ffd3d3;font-size:14px;min-height:18px}
+
+  /* ===== Tiến hóa & chọn nhân vật ===== */
+  #evo{margin:8px auto 0;width:210px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,.55)}
+  #evoBar{width:100%;height:11px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(255,255,255,.55)}
+  #evoFill{display:block;height:100%;width:0;background:linear-gradient(90deg,#7bff6a,#ffe45e,#ff9a2e);transition:width .25s}
+  #evoPears{font-size:12px;opacity:.95}
+  #pick{overflow:auto;justify-content:flex-start;padding-top:max(22px,env(safe-area-inset-top))}
+  #pickList{width:100%;display:flex;flex-direction:column;gap:12px}
+  .pcard{width:100%;border:2px solid rgba(255,255,255,.3);border-radius:16px;padding:10px 8px;background:rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+  .pcard.on{border-color:#ffcf3f;background:rgba(255,207,63,.2)}
+  .pt{font-size:20px;font-weight:800}
+  .pbig{width:112px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4))}
+  .pn{font-size:13px;opacity:.9}
+  .thumbs{display:flex;gap:4px;width:100%;justify-content:center}
+  .th{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+  .th canvas{width:100%;max-width:56px;height:auto;image-rendering:pixelated}
+  .th span{font-size:10px;line-height:1.1;opacity:.95;text-align:center}
+  .th.lock{opacity:.55}
 </style>
 </head>
 <body>
@@ -82,13 +100,15 @@
   <canvas id="c"></canvas>
   <div id="dbg"></div>
 
-  <div id="hud" class="hidden"><div id="score">0</div><div id="msg"></div></div>
+  <div id="hud" class="hidden"><div id="score">0</div>
+    <div id="evo"><div id="evoName"></div><div id="evoBar"><i id="evoFill"></i></div><div id="evoPears">🍐 0</div></div>
+    <div id="msg"></div></div>
   <div id="hint" class="hidden">Chạm để vỗ cánh – bay qua khe cột đá</div>
 
 
   <div class="screen" id="login">
     <div id="loginTop">
-      <canvas id="eagleBig" width="24" height="20"></canvas>
+      <canvas id="eagleBig" width="28" height="24"></canvas>
       <h1>ĐẠI BÀNG</h1>
       <p class="tag">Tự do – Vươn xa</p>
     </div>
@@ -106,6 +126,7 @@
     <p class="sub">Tự do – Vươn xa</p>
     <p>Kỷ lục: <b id="menuBest">0</b></p>
     <button id="btnPlay" class="primary">▶ CHƠI</button>
+    <button id="btnPick">🦅 Nhân vật</button>
     <button id="btnLbMenu">🏆 Bảng xếp hạng</button>
     <button id="btnAuth">👤 Đăng nhập</button>
     <p id="userInfo" class="small">Đang chơi khách</p>
@@ -117,9 +138,17 @@
     <p>Điểm: <b id="overScore">0</b></p>
     <p>Kỷ lục: <b id="overBest">0</b></p>
     <p id="overNew" class="small"></p>
+    <p id="overForm" class="small"></p>
     <button id="btnReplay" class="primary">CHƠI LẠI</button>
     <button id="btnLbOver">🏆 Bảng xếp hạng</button>
     <button id="btnHome">🏠 Trang chủ</button>
+  </div>
+
+  <div class="screen hidden" id="pick">
+    <h2>CHỌN NHÂN VẬT</h2>
+    <div id="pickList"></div>
+    <p class="small">Cứ 20 điểm tiến hóa 1 lần · mỗi 🍐 quả lê = +4 điểm tiến hóa</p>
+    <button id="pickBack" class="primary">Xong</button>
   </div>
 
   <div class="modal hidden" id="lb">
@@ -137,6 +166,6 @@
 window.addEventListener('error',function(e){var el=document.getElementById('dbg');if(el)el.textContent='Lỗi: '+(e.message||'không rõ');});
 setTimeout(function(){if(!window.__ibReady){var el=document.getElementById('loginErr');if(el)el.textContent='Game chưa tải được. Hãy tải lại trang (xóa cache) và kiểm tra đã đưa ĐỦ file lên GitHub (game.js, firebase.js, firebase-config.js).';}},4000);
 </script>
-<script type="module" src="game.js?v=1"></script>
+<script type="module" src="game.js?v=2"></script>
 </body>
 </html>
